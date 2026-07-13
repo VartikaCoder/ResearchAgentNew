@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+langchain
+langgraph
+langchain-community
+python-dotenv
+requests
+httpx
