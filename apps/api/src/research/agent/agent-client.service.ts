@@ -80,10 +80,12 @@ export class AgentClientService {
               continue;
             }
             subscriber.next(parsed);
-            if (parsed.type === 'error') {
+            if (parsed.type === 'error' || parsed.type === 'done') {
               settled = true;
               subscriber.complete();
-              child.kill('SIGTERM');
+              if (parsed.type === 'error') {
+                child.kill('SIGTERM');
+              }
             }
           } catch {
             this.logger.warn(`Non-JSON agent stdout line: ${trimmed}`);
@@ -110,7 +112,7 @@ export class AgentClientService {
             const parsed: unknown = JSON.parse(stdoutBuffer.trim());
             if (isResearchAgentEvent(parsed)) {
               subscriber.next(parsed);
-              if (parsed.type === 'error') {
+              if (parsed.type === 'error' || parsed.type === 'done') {
                 settled = true;
                 subscriber.complete();
                 return;

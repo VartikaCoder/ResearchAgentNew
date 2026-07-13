@@ -32,6 +32,9 @@ export type ResearchAgentEvent =
       type: 'error';
       message: string;
       detail?: string;
+    }
+  | {
+      type: 'done';
     };
 
 export function isResearchAgentEvent(value: unknown): value is ResearchAgentEvent {
@@ -43,6 +46,7 @@ export function isResearchAgentEvent(value: unknown): value is ResearchAgentEven
     type === 'status' ||
     type === 'node' ||
     type === 'result' ||
-    type === 'error'
+    type === 'error' ||
+    type === 'done'
   );
 }

@@ -130,6 +130,7 @@ def stream_mock_research(goal: str) -> dict[str, Any]:
     }
     emit({"type": "node", "node": "final_output", "data": {"final_output": final_output}})
     emit({"type": "result", "data": final_output})
+    emit({"type": "done"})
     return final_output
 
 
@@ -154,6 +155,7 @@ def stream_research(goal: str) -> dict[str, Any]:
         raise RuntimeError("Research agent finished without a final_output payload")
 
     emit({"type": "result", "data": final_output})
+    emit({"type": "done"})
     return final_output
 
 

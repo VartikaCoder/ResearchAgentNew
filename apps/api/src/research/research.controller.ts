@@ -70,7 +70,7 @@ export class ResearchController {
     res.setHeader('X-Accel-Buffering', 'no');
     res.flushHeaders?.();
 
-    const writeEvent = (event: ResearchAgentEvent | { type: 'done' }) => {
+    const writeEvent = (event: ResearchAgentEvent) => {
       res.write(`event: ${event.type}\n`);
       res.write(`data: ${JSON.stringify(event)}\n\n`);
     };
