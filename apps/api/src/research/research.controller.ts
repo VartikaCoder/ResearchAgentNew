@@ -1,109 +1,39 @@
-import {
-  BadRequestException,
-  Controller,
-  Get,
-  Header,
-  HttpStatus,
-  Logger,
-  Post,
-  Body,
-  Query,
-  Res,
-} from '@nestjs/common';
-import type { Response } from 'express';
-import { finalize } from 'rxjs';
-import { ResearchRequestDto } from './dto/research-request.dto';
-import { ResearchService } from './research.service';
-import type { ResearchAgentEvent } from './types/research-events';
+import { Controller, Post, Body, Sse } from '@nestjs/common';
+import { Observable } from 'rxjs';
 
-@Controller()
+@Controller('research')
 export class ResearchController {
-  private readonly logger = new Logger(ResearchController.name);
+  private readonly PYTHON_AGENT_URL = 'https://researchagentnew-3.onrender.com';
 
-  constructor(private readonly researchService: ResearchService) {}
-
-  /**
-   * POST /research — preferred for longer goals (JSON body).
-   */
-  @Post('research')
-  @Header('Content-Type', 'text/event-stream')
-  @Header('Cache-Control', 'no-cache, no-transform')
-  @Header('Connection', 'keep-alive')
-  @Header('X-Accel-Buffering', 'no')
-  streamResearchPost(
-    @Body() body: ResearchRequestDto,
-    @Res() res: Response,
-  ): void {
-    this.openResearchStream(body.goal, res);
-  }
-
-  /**
-   * GET /research?goal=... — native EventSource-compatible SSE endpoint.
-   */
-  @Get('research')
-  @Header('Content-Type', 'text/event-stream')
-  @Header('Cache-Control', 'no-cache, no-transform')
-  @Header('Connection', 'keep-alive')
-  @Header('X-Accel-Buffering', 'no')
-  streamResearchGet(
-    @Query('goal') goal: string | undefined,
-    @Res() res: Response,
-  ): void {
-    this.openResearchStream(goal ?? '', res);
-  }
-
-  private openResearchStream(rawGoal: string, res: Response): void {
-    const goal = rawGoal?.trim();
-    if (!goal || goal.length < 3) {
-      throw new BadRequestException(
-        'goal is required and must be at least 3 characters',
-      );
-    }
-    if (goal.length > 2000) {
-      throw new BadRequestException('goal must be at most 2000 characters');
-    }
-
-    res.status(HttpStatus.OK);
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache, no-transform');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no');
-    res.flushHeaders?.();
-
-    const writeEvent = (event: ResearchAgentEvent) => {
-      res.write(`event: ${event.type}\n`);
-      res.write(`data: ${JSON.stringify(event)}\n\n`);
-    };
-
-    const subscription = this.researchService
-      .streamResearch(goal)
-      .pipe(
-        finalize(() => {
-          if (!res.writableEnded) {
-            writeEvent({ type: 'done' });
-            res.end();
+  @Post()
+  @Sse()
+  async research(@Body('goal') goal: string): Promise<Observable<MessageEvent>> {
+    return new Observable((observer) => {
+      fetch(`${this.PYTHON_AGENT_URL}/research`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ goal }),
+      })
+        .then(async (response) => {
+          const reader = response.body?.getReader();
+          if (!reader) {
+            observer.error(new Error('No response body from Python agent'));
+            return;
           }
-        }),
-      )
-      .subscribe({
-        next: (event) => {
-          writeEvent(event);
-        },
-        error: (error: unknown) => {
-          const message =
-            error instanceof Error
-              ? error.message
-              : 'Unexpected research stream error';
-          this.logger.error(message);
-          if (!res.writableEnded) {
-            writeEvent({ type: 'error', message });
-            res.end();
-          }
-        },
-      });
+          const decoder = new TextDecoder();
 
-    res.on('close', () => {
-      subscription.unsubscribe();
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            observer.next({ data: chunk } as MessageEvent);
+          }
+          observer.complete();
+        })
+        .catch((error) => {
+          observer.error(error);
+        });
     });
   }
 }

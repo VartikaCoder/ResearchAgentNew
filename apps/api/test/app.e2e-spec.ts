@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
@@ -13,13 +13,6 @@ describe('AppController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-      }),
-    );
     await app.init();
   });
 
@@ -31,16 +24,5 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer()).get('/health').expect(200).expect({
       status: 'ok',
     });
-  });
-
-  it('/research (POST) validates body', () => {
-    return request(app.getHttpServer())
-      .post('/research')
-      .send({})
-      .expect(400);
-  });
-
-  it('/research (GET) validates goal query', () => {
-    return request(app.getHttpServer()).get('/research').expect(400);
   });
 });
