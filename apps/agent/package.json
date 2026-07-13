@@ -1,0 +1,9 @@
+{
+  "name": "agent",
+  "private": true,
+  "scripts": {
+    "dev": ".venv/bin/python main.py",
+    "start": ".venv/bin/python main.py",
+    "lint": "echo \"No lint configured for agent yet\""
+  }
+}
