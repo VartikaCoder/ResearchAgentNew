@@ -10,17 +10,8 @@ If Nest `/health` works but research returns **502**, the Python service is down
 
 ## Fix Python 502 (researchagentnew-3)
 
-Free Render instances often crash if `requirements.txt` pulls heavy packages
-(LangChain/NumPy) that the current `main.py` does not need.
-
-Use a light `requirements.txt` (already in this repo):
-
-```
-fastapi
-uvicorn[standard]
-pydantic
-python-dotenv
-```
+Live research needs LangChain/LangGraph packages. See `apps/agent/RENDER.md` for
+env vars (`OPENAI_API_KEY`, `TAVILY_API_KEY`).
 
 | Setting | Value |
 |---|---|
