@@ -1,21 +1,42 @@
 import { Controller, Post, Body, Sse } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
 
 @Controller('research')
 export class ResearchController {
-  constructor(private readonly httpService: HttpService) {}
-
-  private readonly PYTHON_URL = 'https://researchagentnew-3.onrender.com';
+  private readonly PYTHON_AGENT_URL = 'https://researchagentnew-3.onrender.com';
 
   @Post()
   @Sse()
-  research(@Body('goal') goal: string): Observable<any> {
-    return this.httpService.post(`${this.PYTHON_URL}/research`, { goal }).pipe(
-      map((response) => ({
-        data: response.data,
-      })),
-    );
+  async research(@Body('goal') goal: string): Promise<Observable<any>> {
+    return new Observable((observer) => {
+      fetch(`${this.PYTHON_AGENT_URL}/research`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ goal: goal }),
+      })
+        .then(async (response) => {
+          if (!response.ok) {
+            throw new Error('Agent request failed');
+          }
+
+          const reader = response.body?.getReader();
+          if (!reader) {
+            throw new Error('No response body from Python agent');
+          }
+          const decoder = new TextDecoder();
+
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            observer.next({ data: chunk });
+          }
+          observer.complete();
+        })
+        .catch((error) => {
+          observer.error(error);
+        });
+    });
   }
 }
