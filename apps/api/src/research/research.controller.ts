@@ -24,11 +24,12 @@ export class ResearchController {
       });
 
       if (!response.ok) {
-        const detail = await response.text();
         return {
-          error: 'Failed to call agent',
+          error:
+            response.status === 502
+              ? 'Python agent is down (502). Open https://researchagentnew-3.onrender.com/health and check the Render logs for that service.'
+              : `Failed to call agent (HTTP ${response.status})`,
           status: response.status,
-          detail,
           goal,
         };
       }
@@ -42,7 +43,7 @@ export class ResearchController {
       return { goal, agentResponse: text };
     } catch (error) {
       return {
-        error: 'Failed to call agent',
+        error: 'Failed to reach Python agent',
         message: error instanceof Error ? error.message : 'Unknown error',
         goal,
       };

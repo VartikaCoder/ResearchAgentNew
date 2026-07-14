@@ -6,21 +6,21 @@
 - Nest API health: https://researchagentnew-2.onrender.com/health
 - Python agent health: https://researchagentnew-3.onrender.com/health
 
-## NestJS service (researchagentnew-2)
+If Nest `/health` works but research returns **502**, the Python service is down.
 
-In the Render dashboard for this service, set:
+## Fix Python 502 (researchagentnew-3)
 
-| Setting | Value |
-|---|---|
-| **Root Directory** | leave empty (repo root) **or** `apps/api` |
-| **Build Command** (repo root) | `pnpm install && pnpm --filter api build` |
-| **Start Command** (repo root) | `pnpm --filter api start:prod` |
-| **Build Command** (if root = `apps/api`) | `cd ../.. && pnpm install && pnpm --filter api build` |
-| **Start Command** (if root = `apps/api`) | `node dist/main` |
+Free Render instances often crash if `requirements.txt` pulls heavy packages
+(LangChain/NumPy) that the current `main.py` does not need.
 
-Do **not** use root `pnpm start:prod` — the root `package.json` has no such script, so the Nest routes never come up and you get 404s.
+Use a light `requirements.txt` (already in this repo):
 
-## Python agent (researchagentnew-3)
+```
+fastapi
+uvicorn[standard]
+pydantic
+python-dotenv
+```
 
 | Setting | Value |
 |---|---|
@@ -28,21 +28,42 @@ Do **not** use root `pnpm start:prod` — the root `package.json` has no such sc
 | **Build Command** | `pip install -r requirements.txt` |
 | **Start Command** | `uvicorn main:app --host 0.0.0.0 --port $PORT` |
 
+Then:
+
+1. Trigger a **Manual Deploy** for `researchagentnew-3`
+2. Wait until status is **Live**
+3. Open https://researchagentnew-3.onrender.com/health  
+   Expect: `{"status":"healthy"}`
+4. Retry Start Research on the frontend
+
+If health never loads, open Render → Python service → **Logs** and look for crash / OOM / port bind errors.
+
+## NestJS service (researchagentnew-2)
+
+| Setting | Value |
+|---|---|
+| **Root Directory** | *(empty / repo root)* |
+| **Build Command** | `pnpm install && pnpm --filter api build` |
+| **Start Command** | `pnpm --filter api start:prod` |
+
 ## Next.js frontend (researchagentnew-1)
 
 | Setting | Value |
 |---|---|
-| **Root Directory** | leave empty **or** `apps/web` |
-| **Build Command** (repo root) | `pnpm install && pnpm --filter web build` |
-| **Start Command** (repo root) | `pnpm --filter web start` |
+| **Root Directory** | *(empty / repo root)* |
+| **Build Command** | `pnpm install && pnpm --filter web build` |
+| **Start Command** | `pnpm --filter web start` |
 
-## Quick verify after deploy
+## Quick verify
 
 ```bash
+curl https://researchagentnew-3.onrender.com/health
+curl -X POST https://researchagentnew-3.onrender.com/research \
+  -H 'Content-Type: application/json' \
+  -d '{"goal":"Best AI tools for marketing"}'
+
 curl https://researchagentnew-2.onrender.com/health
 curl -X POST https://researchagentnew-2.onrender.com/research \
   -H 'Content-Type: application/json' \
   -d '{"goal":"Best AI tools for marketing"}'
 ```
-
-If `/health` is not `{"status":"ok",...}`, fix the Nest Render start command first.
