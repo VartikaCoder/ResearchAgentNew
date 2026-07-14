@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 
+type ResearchResult = Record<string, unknown>;
+
 export default function ResearchAgent() {
   const [goal, setGoal] = useState('');
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<ResearchResult | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleResearch = async () => {
@@ -20,9 +22,9 @@ export default function ResearchAgent() {
         body: JSON.stringify({ goal }),
       });
 
-      const data = await res.json();
+      const data = (await res.json()) as ResearchResult;
       setResult(data);
-    } catch (error) {
+    } catch {
       setResult({ error: 'Failed to connect to backend' });
     } finally {
       setLoading(false);
