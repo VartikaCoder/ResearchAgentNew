@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
 
 @Controller()
 export class ResearchController {
@@ -6,10 +6,11 @@ export class ResearchController {
 
   @Get('health')
   health() {
-    return { status: 'ok' };
+    return { status: 'ok', service: 'nestjs-api' };
   }
 
   @Post('research')
+  @HttpCode(200)
   async research(@Body('goal') goal: string) {
     if (!goal?.trim()) {
       return { error: 'Goal is required' };
@@ -23,9 +24,11 @@ export class ResearchController {
       });
 
       if (!response.ok) {
+        const detail = await response.text();
         return {
           error: 'Failed to call agent',
           status: response.status,
+          detail,
           goal,
         };
       }

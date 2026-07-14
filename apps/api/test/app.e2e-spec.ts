@@ -23,6 +23,7 @@ describe('App (e2e)', () => {
   it('/health (GET)', () => {
     return request(app.getHttpServer()).get('/health').expect(200).expect({
       status: 'ok',
+      service: 'nestjs-api',
     });
   });
 
@@ -30,6 +31,6 @@ describe('App (e2e)', () => {
     return request(app.getHttpServer())
       .post('/research')
       .send({ goal: 'test goal' })
-      .expect(201);
+      .expect(200);
   });
 });
