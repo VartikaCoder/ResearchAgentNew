@@ -1,22 +1,48 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 
-@Controller('research')
+@Controller()
 export class ResearchController {
   private readonly PYTHON_AGENT_URL = 'https://researchagentnew-3.onrender.com';
 
-  @Post()
-  async research(@Body('goal') goal: string) {
-    const response = await fetch(`${this.PYTHON_AGENT_URL}/research`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ goal }),
-    });
+  @Get('health')
+  health() {
+    return { status: 'ok' };
+  }
 
-    if (!response.ok) {
-      return { error: 'Failed to call agent' };
+  @Post('research')
+  async research(@Body('goal') goal: string) {
+    if (!goal?.trim()) {
+      return { error: 'Goal is required' };
     }
 
-    // For now, just return the final result (we can add streaming later)
-    return await response.json();
+    try {
+      const response = await fetch(`${this.PYTHON_AGENT_URL}/research`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ goal }),
+      });
+
+      if (!response.ok) {
+        return {
+          error: 'Failed to call agent',
+          status: response.status,
+          goal,
+        };
+      }
+
+      const contentType = response.headers.get('content-type') ?? '';
+      if (contentType.includes('application/json')) {
+        return await response.json();
+      }
+
+      const text = await response.text();
+      return { goal, agentResponse: text };
+    } catch (error) {
+      return {
+        error: 'Failed to call agent',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        goal,
+      };
+    }
   }
 }
