@@ -2,55 +2,56 @@
 
 import { useState } from 'react';
 
-export default function Home() {
+export default function ResearchAgent() {
   const [goal, setGoal] = useState('');
   const [output, setOutput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const startResearch = () => {
-    if (!goal) return;
+  const handleSubmit = () => {
+    if (!goal.trim()) return;
 
-    setIsLoading(true);
+    setLoading(true);
     setOutput('Starting research...\n\n');
 
-    const eventSource = new EventSource(
-      `https://researchagentnew-2.onrender.com/research?goal=${encodeURIComponent(goal)}`
-    );
+    const backendUrl = 'https://researchagentnew-2.onrender.com';
+    const url = `${backendUrl}/research?goal=${encodeURIComponent(goal)}`;
+
+    const eventSource = new EventSource(url);
 
     eventSource.onmessage = (event) => {
-      setOutput((prev) => prev + event.data + '\n');
+      setOutput(prev => prev + event.data + '\n');
     };
 
     eventSource.onerror = () => {
       eventSource.close();
-      setIsLoading(false);
-      setOutput((prev) => prev + '\n[Connection closed]');
+      setLoading(false);
+      setOutput(prev => prev + '\n[Connection ended]');
     };
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-zinc-950 text-white p-8">
+      <div className="max-w-3xl mx-auto">
         <h1 className="text-4xl font-bold mb-8 text-center">Research Agent</h1>
 
-        <div className="mb-8">
+        <div className="mb-6">
           <textarea
-            className="w-full h-32 p-4 bg-gray-900 border border-gray-700 rounded-xl text-lg"
-            placeholder="Enter your research goal..."
             value={goal}
             onChange={(e) => setGoal(e.target.value)}
+            placeholder="Enter your research goal (e.g. Best AI tools for marketing in 2026)"
+            className="w-full h-32 p-4 bg-zinc-900 border border-zinc-700 rounded-2xl text-lg"
           />
           <button
-            onClick={startResearch}
-            disabled={isLoading || !goal}
-            className="mt-4 px-8 py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 rounded-xl text-lg font-medium w-full"
+            onClick={handleSubmit}
+            disabled={loading || !goal.trim()}
+            className="mt-4 w-full py-4 bg-white text-black rounded-2xl font-semibold text-lg disabled:opacity-50"
           >
-            {isLoading ? 'Researching...' : 'Start Research'}
+            {loading ? 'Researching...' : 'Start Research'}
           </button>
         </div>
 
         {output && (
-          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-8 font-mono whitespace-pre-wrap text-green-400 min-h-96 overflow-auto">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-3xl p-8 font-mono text-green-400 whitespace-pre-wrap min-h-96">
             {output}
           </div>
         )}
