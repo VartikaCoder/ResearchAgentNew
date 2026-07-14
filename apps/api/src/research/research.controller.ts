@@ -12,11 +12,11 @@ export class ResearchController {
       fetch(`${this.PYTHON_AGENT_URL}/research`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ goal: goal }),
+        body: JSON.stringify({ goal }),
       })
         .then(async (response) => {
           if (!response.ok) {
-            throw new Error('Agent request failed');
+            throw new Error(`Agent error: ${response.status}`);
           }
 
           const reader = response.body?.getReader();
@@ -35,7 +35,8 @@ export class ResearchController {
           observer.complete();
         })
         .catch((error) => {
-          observer.error(error);
+          observer.next({ data: `Error: ${error.message}` });
+          observer.complete();
         });
     });
   }
